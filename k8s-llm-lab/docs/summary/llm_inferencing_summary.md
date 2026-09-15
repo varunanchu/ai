@@ -5,12 +5,12 @@
 
 ## Section 1: LLM Serving Engines at a Glance
 
-| Engine | Primary Use Case | Key Feature | When to Use | AWS Service |
-|---|---|---|---|---|
-| **vLLM** | High-throughput CPU/GPU serving | PagedAttention (KV-Cache) | Maximum concurrent users, lowest latency | EKS + GPU nodes |
-| **TGI (Hugging Face)** | Multi-LoRA, enterprise serving | Multi-LoRA + built-in quantization | Multiple fine-tuned models on one GPU | EKS / SageMaker |
-| **DJL DeepSpeed** | Massive model deployment | Tensor Parallelism (splits model across GPUs) | Models too big for one GPU (70B+) | SageMaker only |
-| **KServe** | K8s autoscaling orchestrator | Autoscale GPU pods up/down on traffic | Wraps vLLM/TGI, manages scaling | EKS |
+| Engine | Primary Use Case | Key Feature | When to Use | AWS Service | Azure Service |
+|---|---|---|---|---|---|
+| **vLLM** | High-throughput CPU/GPU serving | PagedAttention (KV-Cache) | Maximum concurrent users, lowest latency | EKS + GPU nodes | AKS + GPU nodes |
+| **TGI (Hugging Face)** | Multi-LoRA, enterprise serving | Multi-LoRA + built-in quantization | Multiple fine-tuned models on one GPU | EKS / SageMaker | AKS / Azure Machine Learning (AML) |
+| **DJL DeepSpeed** | Massive model deployment | Tensor Parallelism (splits model across GPUs) | Models too big for one GPU (70B+) | SageMaker | AML (Custom Container) / AKS |
+| **KServe** | K8s autoscaling orchestrator | Autoscale GPU pods up/down on traffic | Wraps vLLM/TGI, manages scaling | EKS | AKS |
 
 ---
 
@@ -116,10 +116,10 @@ User Request → GenAI Gateway tags adapter_id
 | **Model / Adapter Storage** | Amazon S3 | Azure Blob Storage |
 | **Container Registry** | Amazon ECR | Azure Container Registry (ACR) |
 | **Kubernetes (Orchestration)** | Amazon EKS | Azure Kubernetes Service (AKS) |
-| **Managed ML Platform** | Amazon SageMaker | Azure Machine Learning (AML) |
-| **Managed LLM Serving** | SageMaker Endpoints | Azure ML Managed Online Endpoints |
+| **Managed ML Platform** | Amazon SageMaker | Azure Machine Learning (AML) / **Azure Databricks** |
+| **Managed LLM Serving** | SageMaker Endpoints | AML Managed Endpoints / **Databricks Model Serving** |
 | **S3 Path Prefix** | `s3://bucket/path` | `az://container/path` or `https://...` |
 | **GPU Instances** | `p4d` (A100), `g5` (A10G) | `NC A100 v4` series, `NDm A100 v4` |
-| **Model Registry / Tracking** | SageMaker Model Registry | Azure ML Model Registry / MLflow |
-| **Serverless Inference** | SageMaker Serverless | Azure Container Apps |
+| **Model Registry / Tracking** | SageMaker Model Registry | Azure ML Registry / **Databricks MLflow** |
+| **Serverless Inference** | SageMaker Serverless | Azure Container Apps / **Databricks Serverless** |
 

@@ -1,0 +1,44 @@
+# service.yaml
+# ─────────────────────────────────────────────────────────────
+# A Service gives pods a stable network address.
+#
+# WITHOUT a Service:
+#   Pods get random IP addresses that change every restart.
+#   You can never reliably reach them.
+#
+# WITH a Service:
+#   The Service gets a stable DNS name: llm-service.llm-lab.svc.cluster.local
+#   It automatically routes traffic to healthy pods matching the label selector.
+#   This is how microservices find each other inside Kubernetes.
+# ─────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: Service
+metadata:
+  name: llm-service
+  namespace: llm-lab
+spec:
+  # ── Type: ClusterIP ─────────────────────────────────────────
+  # ClusterIP = only reachable INSIDE the cluster
+  # (we use kubectl port-forward to expose it to our laptop)
+  #
+  # Other types:
+  #   NodePort    = opens a port on the K8s node (simple external access)
+  #   LoadBalancer = creates a cloud load balancer (AWS ALB/NLB in prod)
+  type: ClusterIP
+
+  # ── Selector: which pods to send traffic to ─────────────────
+  # Routes to any pod with label app=llm-server
+  # This decouples the Service from specific pod names
+  selector:
+    app: llm-server
+
+  # ── Port mapping ─────────────────────────────────────────────
+  ports:
+  - name: http
+    port: 80              # port the Service listens on (inside cluster)
+    targetPort: 8000      # port on the pod (must match containerPort in deployment)
+    protocol: TCP
+
+  # After kubectl port-forward:
+  # localhost:8000 → Service port 80 → Pod port 8000 → FastAPI
+

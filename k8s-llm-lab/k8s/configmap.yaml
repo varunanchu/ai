@@ -1,0 +1,23 @@
+# configmap.yaml
+# ─────────────────────────────────────────────────────────────
+# A ConfigMap stores configuration as key-value pairs.
+# Pods read these as environment variables at runtime.
+#
+# WHY use ConfigMap instead of hardcoding in the Dockerfile?
+#   → You can change the model WITHOUT rebuilding the Docker image
+#   → `kubectl apply -f configmap.yaml` → pod restarts with new config
+#   → This is the 12-Factor App principle: config separated from code
+# ─────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: model-config
+  namespace: llm-lab
+data:
+  # These become environment variables inside the container
+  # server.py reads them via os.getenv(...)
+  MODEL_REPO: "TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF"
+  MODEL_FILE: "tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf"
+  CONTEXT_SIZE: "2048"
+  MAX_TOKENS: "256"
+

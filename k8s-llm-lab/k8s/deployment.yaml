@@ -1,0 +1,94 @@
+# deployment.yaml
+# ─────────────────────────────────────────────────────────────
+# A Deployment is the most important K8s object.
+# It tells Kubernetes:
+#   "Keep exactly N copies (replicas) of this pod running at all times.
+#    If one crashes, auto-restart it. If I update the image,
+#    roll it out gradually with zero downtime."
+# ─────────────────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: llm-server              # name of this Deployment object
+  namespace: llm-lab            # must match the namespace we created
+  labels:
+    app: llm-server
+spec:
+  replicas: 1                   # 1 pod (our laptop has limited RAM)
+                                # In prod: 3+ for high availability
+
+  # ── Selector: how the Deployment finds "its" pods ──────────
+  # Deployment manages pods that have the label app=llm-server
+  selector:
+    matchLabels:
+      app: llm-server
+
+  # ── Rolling Update Strategy ─────────────────────────────────
+  # When you update the image, K8s starts new pod BEFORE killing old one
+  # → zero downtime deployments (critical for production)
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1               # allow 1 extra pod during update
+      maxUnavailable: 0         # never let all pods go down simultaneously
+
+  # ── Pod Template: blueprint for each pod ───────────────────
+  template:
+    metadata:
+      labels:
+        app: llm-server         # MUST match selector.matchLabels above
+    spec:
+      containers:
+      - name: llm-server
+        image: llm-server:latest     # our Docker image (built locally)
+        imagePullPolicy: Never       # use local image (minikube doesn't pull from registry)
+        ports:
+        - containerPort: 8000        # port our FastAPI server listens on
+
+        # ── Inject ConfigMap as environment variables ────────
+        envFrom:
+        - configMapRef:
+            name: model-config       # reads all keys from configmap.yaml
+
+        # ── Resource limits (critical in production!) ────────
+        # requests = what K8s reserves/schedules based on
+        # limits   = hard ceiling; exceed memory → pod gets OOMKilled
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"              # 500 millicores = 0.5 CPU core
+          limits:
+            memory: "3Gi"            # TinyLlama Q4 needs ~800MB, headroom for OS
+            cpu: "1500m"             # 1.5 CPU cores max
+
+        # ── Health probes: K8s uses these to know if pod is healthy ──
+        # Liveness:  if this fails → K8s restarts the pod
+        # Readiness: if this fails → K8s stops sending traffic to this pod
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 120   # model download takes ~2 min, wait for it
+          periodSeconds: 30          # check every 30 seconds
+          failureThreshold: 3        # restart after 3 consecutive failures
+
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8000
+          initialDelaySeconds: 120
+          periodSeconds: 10
+          failureThreshold: 6
+
+        # ── Volume mount for model caching ──────────────────
+        volumeMounts:
+        - name: model-cache
+          mountPath: /app/models     # model downloads go here
+
+      # ── Volumes ─────────────────────────────────────────────
+      # emptyDir: lives as long as the pod, deleted when pod dies
+      # In prod you'd use a PersistentVolumeClaim (PVC) backed by EBS/EFS
+      volumes:
+      - name: model-cache
+        emptyDir: {}
+

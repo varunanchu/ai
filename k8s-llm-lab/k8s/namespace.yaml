@@ -1,0 +1,17 @@
+# namespace.yaml
+# ─────────────────────────────────────────────────────────────
+# A Namespace is like a "folder" inside Kubernetes.
+# It logically isolates resources so your llm-lab pods don't
+# mix with other apps running in the same cluster.
+#
+# In production (your NatWest EKS): each team/project gets
+# its own namespace for RBAC, resource quotas, and network isolation.
+# ─────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: llm-lab
+  labels:
+    purpose: learning
+    project: k8s-llm-lab
+

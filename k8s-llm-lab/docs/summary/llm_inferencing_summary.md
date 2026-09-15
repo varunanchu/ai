@@ -109,14 +109,17 @@ User Request → GenAI Gateway tags adapter_id
 
 ---
 
-## Section 9: AWS vs Azure Equivalents
+## Section 9: AWS vs Azure Equivalents (Cloud Architecture)
 
-| Concept | AWS | Azure |
+| Concept | AWS Service | Azure Service |
 |---|---|---|
-| Model / Adapter Storage | Amazon S3 | Azure Blob Storage |
-| Container Registry | Amazon ECR | Azure Container Registry (ACR) |
-| Kubernetes | Amazon EKS | Azure AKS |
-| Managed LLM Serving | SageMaker Endpoints | Azure ML Managed Endpoints |
-| S3 Path Prefix | `s3://bucket/path` | `az://container/path` |
-| GPU Instances | `ml.g5.xlarge` (A10G GPU) | `NC A100 v4` series |
+| **Model / Adapter Storage** | Amazon S3 | Azure Blob Storage |
+| **Container Registry** | Amazon ECR | Azure Container Registry (ACR) |
+| **Kubernetes (Orchestration)** | Amazon EKS | Azure Kubernetes Service (AKS) |
+| **Managed ML Platform** | Amazon SageMaker | Azure Machine Learning (AML) |
+| **Managed LLM Serving** | SageMaker Endpoints | Azure ML Managed Online Endpoints |
+| **S3 Path Prefix** | `s3://bucket/path` | `az://container/path` or `https://...` |
+| **GPU Instances** | `p4d` (A100), `g5` (A10G) | `NC A100 v4` series, `NDm A100 v4` |
+| **Model Registry / Tracking** | SageMaker Model Registry | Azure ML Model Registry / MLflow |
+| **Serverless Inference** | SageMaker Serverless | Azure Container Apps |
 

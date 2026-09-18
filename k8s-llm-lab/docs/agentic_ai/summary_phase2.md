@@ -29,6 +29,19 @@
 ## The AWS Step Functions Analogy
 - LangGraph is exactly like **AWS Step Functions**. It is simply an orchestrator that passes a JSON payload (the `State`) between isolated functions (the `Nodes`), merging the data at each step.
 
+## LangGraph & LangChain: Quick Reference Cheat Sheet
+
+| Component | Framework | What is its use? (The "Why") | How it works (The "How") |
+| :--- | :--- | :--- | :--- |
+| **State (`TypedDict`)** | **LangGraph** | Acts as the **Global Memory** payload. | A dictionary passed between every step. When a Node returns data, LangGraph merges it into this State so the next Node can read it. |
+| **Node** | **LangGraph** | The **Worker** (AWS Lambda equivalent). | A Python function that takes the `State`, does actual work (calls an LLM, runs a tool), and returns updates to the `State`. |
+| **Conditional Edge** | **LangGraph** | The **Router** (The Flowchart lines). | Pure Python `if/else` logic that reads the `State` (e.g., `state["category"]`) and decides exactly which Node executes next. |
+| **MemorySaver & `thread_id`** | **LangGraph** | **Pausing & Resuming** conversations. | Saves the exact graph state to a database. When a user replies 5 minutes later, you pass their `thread_id` and the graph resumes exactly where it left off. |
+| **LCEL ( The `\|` pipe )** | **LangChain** | The **Pipeline Engine**. | LangChain Expression Language. It pipes data sequentially just like Linux: `Prompt \| LLM \| Parser`. |
+| **ChatPromptTemplate** | **LangChain** | The **Instruction Wrapper**. | Separates System instructions (the unbreakable rules) from Human input to prevent users from jailbreaking the prompt. |
+| **OutputParser (JSON/Str)** | **LangChain** | The **Format Enforcer**. | Intercepts the LLM's messy text and forces it into a strict Python dictionary or string. Throws an error if the LLM hallucinates format. |
+| **ChatModel** | **LangChain** | The **Vendor Agnostic LLM**. | A standardized wrapper. Allows you to swap `ChatOllama` for `ChatBedrock` in one line of code without rewriting pipelines. |
+
 ---
 **Transition to Phase 3:** Now that we can build robust single-agent workflows (pipelines), we are ready to build **Multi-Agent Systems** (CrewAI / AutoGen), where multiple distinct LLM personas converse, debate, and collaborate to solve complex goals.
 

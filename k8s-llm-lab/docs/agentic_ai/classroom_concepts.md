@@ -489,15 +489,62 @@ Before agents, developers had to hardcode complex `if/else` decision trees. With
 
 ---
 
-## Phase 2: LangGraph (coming next)
+## Phase 2: LangGraph & State Machines
 
-*Content will be added when we start Phase 2*
+### Lesson 2.1: From 'While Loops' to 'Flowcharts'
+In Phase 1, the ReAct loop was a simple `while` loop. The LLM was entirely in charge of deciding what to do, which tools to call, and when to stop. This is highly autonomous, but highly fragile.
+
+**LangGraph** fixes this by modeling agents as graphs (flowcharts):
+1. **State:** A shared data dictionary (memory) passed between every step.
+2. **Nodes:** Python functions that do work (e.g., prompt an LLM, run a script) and update the State.
+3. **Edges:** The lines connecting the Nodes. 
+4. **Conditional Edges:** Python `if/else` logic that looks at the State and decides which Node runs next.
+
+**The Router Pattern (Our First Graph):**
+Instead of giving the LLM all the tools and hoping it uses them correctly, we use a Router Pattern.
+- **Node 1 (Classifier):** Asks the LLM to categorize the user's intent (e.g., "Fraud", "Loan", "General").
+- **Conditional Edge:** Reads the category from the State. If "Fraud", route to Node A. If "Loan", route to Node B.
+- **Benefits:** Massive increase in reliability. The LLM only has one job (classify), and standard Python logic handles the safety-critical routing.
+
+### Lesson 2.2: Few-Shot Prompting & Constraining the LLM
+When we first ran the Router with a 1B model, it defaulted everything to "General" because it couldn't follow the zero-shot instruction "Output ONLY the category word". 
+
+**The Fix (Few-Shot Prompting):** We gave the LLM three explicit examples in the prompt (Query -> Category). This instantly fixed the classification.
+
+**The Architectural Lesson:**
+The primary benefit of LangGraph is that it allows you to **constrain** the LLM. Instead of asking one LLM to orchestrate an entire massive ReAct loop, you break the workflow into deterministic Python Nodes. The LLM is only invoked for specific, tiny tasks (like intent classification or entity extraction). This allows you to use much cheaper, faster models (like Llama 3 8B instead of GPT-4) while maintaining higher reliability than a standard agent.
+
+### Lesson 2.3: The "AWS Step Functions" Analogy & State Management
+The best mental model for LangGraph is **AWS Step Functions for AI**. 
+- **LangGraph** is just the orchestrator (the flow chart).
+- **Nodes** are like AWS Lambda functions. This is where the actual LLM prompting, LangChain pipelines, or tool executions happen.
+- **State (`TypedDict`)** is the JSON payload that gets passed from step to step. When a node returns `{"summary": "..."}`, LangGraph merges that into the global state, allowing the next node to read `state["summary"]`.
+
+**Is a multi-node LangGraph a "Multi-Agent" system?**
+No. Breaking a task into "Fetch Node -> Summarize Node -> Format Node" is just a deterministic pipeline (a Single-Agent Workflow). 
+A true **Multi-Agent** system requires nodes that are *autonomous agents* themselves (e.g., a Coder Agent and a QA Agent debating code back and forth). We cover this in Phase 3.
+
+### Lesson 2.4: LangChain Core (LCEL, Prompts, Parsers)
+Inside LangGraph nodes, we use LangChain to do the actual work. Modern LangChain is built on **LCEL (LangChain Expression Language)**, which uses the pipe operator (`|`) to pass data.
+**The Standard Pipeline:** `Dictionary (Variables) -> PromptTemplate -> LLM -> OutputParser`
+
+**Key Components:**
+1. **ChatPromptTemplate:** Separates System Rules (Personas) from Human Input.
+2. **JsonOutputParser:** Forces the LLM to output perfect JSON. If the LLM hallucinates conversational text, the parser catches it and throws an `OUTPUT_PARSING_FAILURE`.
+3. **Vendor Agnosticism:** If a small local model fails at JSON extraction, you only have to change *one line* (the LLM initialization) to swap to Claude or GPT-4. The prompts, parsers, and pipelines remain untouched.
+
+### Lesson 2.5: Stateful Conversations (MemorySaver & Checkpointers)
+Real enterprise bots do not run in a single execution. They execute a node, realize they are missing information, ask the user, and **pause**. 
+
+**How LangGraph handles this:**
+Instead of managing a giant array of chat history manually, LangGraph uses **Checkpointers** (e.g., `MemorySaver`).
+1. When you compile the graph (`builder.compile(checkpointer=memory)`), you tell LangGraph to save the State to a database (or RAM).
+2. When you run `.invoke()`, you pass a `thread_id` (e.g., `{"configurable": {"thread_id": "user_123"}}`).
+3. If the user replies 5 minutes later, you invoke the graph with the same `thread_id`. LangGraph automatically reloads the entire State (including the `account_number` or the `history`) and resumes exactly where it left off!
 
 ---
 
-## Phase 3: CrewAI & AutoGen (coming next)
-
-*Content will be added when we start Phase 3*
+## Phase 3: Multi-Agent Orchestration (coming later)
 
 ---
 
